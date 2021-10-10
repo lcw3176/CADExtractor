@@ -11,6 +11,9 @@ namespace CADExtractor
 {
     public class Main
     {
+        /// <summary>
+        /// 면적 추출 함수
+        /// </summary>
         [CommandMethod("Extract")]
         public void Extract()
         {
@@ -18,14 +21,18 @@ namespace CADExtractor
             Database db = Application.DocumentManager.MdiActiveDocument.Database;
             
 
-            var excelPathResult = ed.GetString("\nEnter the Excel Path: ");
+            PromptResult excelPathResult = ed.GetString("\nEnter the Excel Path: ");
 
             if (excelPathResult.Status != PromptStatus.OK)
             {
                 return;
             }
 
-            var layerNameResult = ed.GetString("\nEnter the Layer Name: ");
+            /// layerNameResult
+            /// 전체 레이어 : *
+            /// 여러 개의 레이어 : 쉼표(,) 로 구분
+            /// 단일 레이어: 단일 입력
+            PromptResult layerNameResult = ed.GetString("\nEnter the Layer Name: ");
 
             if (layerNameResult.Status != PromptStatus.OK)
             {
@@ -35,14 +42,15 @@ namespace CADExtractor
             ExcelUtil excelUtil = new ExcelUtil();
             excelUtil.path = excelPathResult.StringResult;
 
-            Dictionary<int, string> layerDict = new Dictionary<int, string>();
-            Dictionary<int, string> areaDict = new Dictionary<int, string>();
+            bool isAllSelected = layerNameResult.StringResult is "*" ? true : false;
+            string filteredLayerName = isAllSelected ? "*" : layerNameResult.StringResult.Replace(",", " ");
+
+            List<string> layerList = new List<string>();
+            List<string> areaList = new List<string>();
 
             using (Transaction trans = db.TransactionManager.StartTransaction())
             {
                 BlockTableRecord currentSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForRead) as BlockTableRecord;
-
-                int index = 0;
 
                 foreach (ObjectId entId in currentSpace)
                 {
@@ -50,17 +58,16 @@ namespace CADExtractor
                     {
                         Polyline pline = trans.GetObject(entId, OpenMode.ForRead) as Polyline;
 
-                        if (pline.Closed && layerNameResult.StringResult == pline.Layer)
+                        if (pline.Closed && (filteredLayerName.Contains(pline.Layer) || isAllSelected))
                         {
-                            layerDict.Add(index, pline.Layer);
-                            areaDict.Add(index, Convert.ToInt32(pline.Area).ToString());
-                            index++;
+                            layerList.Add(pline.Layer);
+                            areaList.Add(Convert.ToInt32(pline.Area).ToString());
                         }
                     }
                 }
             }
 
-            excelUtil.AddData(layerDict, areaDict);
+            excelUtil.AddData(layerList, areaList);
 
         }
     
