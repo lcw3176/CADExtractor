@@ -7,11 +7,11 @@
 
 ## 개발 환경
 - C#, Visual Studio 2019
-- AutoCAD 2014
-- accoremgd.dll, acdmgd.dll 참조
+- AutoCAD 2012
+- acmgd.dll, acdbmgd.dll 참조
 
 ## 사용법
-1. NETLOAD로 [CADExtractorLib.dll](https://github.com/lcw3176/CADExtractor/releases/download/v1.0.0/CADExtractorLib.dll) 임포트
+1. NETLOAD로 [CADExtractorLib.dll](https://github.com/lcw3176/CADExtractor/releases/download/v1.1.0/CADExtractorLib.dll) 임포트
 2. EXTRACT 명령어 입력
 3. 엑셀 경로 입력
 4. 추출할 레이어 명 입력
