@@ -1,10 +1,12 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using CADExtractorLib;
 using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using OpenFileDialog = Autodesk.AutoCAD.Windows.OpenFileDialog;
 
 [assembly: CommandClass(typeof(CADExtractor.Main))]
 namespace CADExtractor
@@ -19,14 +21,18 @@ namespace CADExtractor
         {
             Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
             Database db = Application.DocumentManager.MdiActiveDocument.Database;
-            
 
-            PromptResult excelPathResult = ed.GetString("\nEnter the Excel Path: ");
+            OpenFileDialog dialog = new OpenFileDialog("Select the Excel Path", "CADExtractor", "xlsx; *;", "CADExtractor", OpenFileDialog.OpenFileDialogFlags.DefaultIsFolder);
 
-            if (excelPathResult.Status != PromptStatus.OK)
+            DialogResult sdResult = dialog.ShowDialog();;
+
+            if (sdResult != DialogResult.OK)
             {
                 return;
             }
+
+            string excelPath = dialog.Filename;
+
 
             /// layerNameResult
             /// 전체 레이어 : *
@@ -40,7 +46,7 @@ namespace CADExtractor
             }
 
             ExcelUtil excelUtil = new ExcelUtil();
-            excelUtil.path = excelPathResult.StringResult;
+            excelUtil.path = excelPath;
 
             bool isAllSelected = layerNameResult.StringResult is "*" ? true : false;
             string filteredLayerName = isAllSelected ? "*" : layerNameResult.StringResult.Replace(",", " ");
@@ -61,7 +67,7 @@ namespace CADExtractor
                         if (pline.Closed && (filteredLayerName.Contains(pline.Layer) || isAllSelected))
                         {
                             layerList.Add(pline.Layer);
-                            areaList.Add(Convert.ToInt32(pline.Area).ToString());
+                            areaList.Add(Math.Round(pline.Area, MidpointRounding.AwayFromZero).ToString());
                         }
                     }
                 }
