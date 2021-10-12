@@ -14,26 +14,6 @@ namespace CADExtractorLib
         /// </summary>
         public string path { get; set; }
 
-        private string extension = ".xlsx";
-
-        /// <summary>
-        /// 파일 존재 유무 판단
-        /// 존재함 -> 기존 파일에 작성
-        /// 존재 안함 -> 새 파일 생성
-        /// </summary>
-        /// <returns></returns>
-        private bool IsExist()
-        {
-            FileInfo fileInfo = new FileInfo(path + extension);
-
-            if (fileInfo.Exists)
-            {
-                return true;
-            }
-
-            return false;
-
-        }
 
         /// <summary>
         /// 엑셀 데이터 저장
@@ -50,26 +30,13 @@ namespace CADExtractorLib
             Excel.Application app = null;
             Excel.Workbook wb = null;
             Excel.Worksheet ws = null;
-            bool exist = IsExist();
 
             try
             {
 
                 app = new Excel.Application();
-                
-
-                if(exist)
-                {
-                    wb = app.Workbooks.Open(path + extension);
-                    ws = wb.Worksheets.get_Item("Sheet1") as Excel.Worksheet;
-                }
-
-                else
-                {
-                    wb = app.Workbooks.Add();
-                    ws = wb.Worksheets.Add(Type.Missing, wb.Worksheets[1]);
-                }
-           
+                wb = app.Workbooks.Open(path);
+                ws = wb.Worksheets.get_Item("Sheet1") as Excel.Worksheet;
 
                 for (int i = 0; i < layerList.Count; i++)
                 {
@@ -88,16 +55,7 @@ namespace CADExtractorLib
 
             finally
             {
-                if (exist)
-                {
-                    wb.Save();
-                }
-
-                else
-                {
-                    wb.SaveAs(path + extension);
-                }
-                
+                wb.Save();
                 wb.Close();
                 app.Quit();
             }
