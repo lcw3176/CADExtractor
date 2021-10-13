@@ -19,10 +19,7 @@
 Command: NETLOAD
 Command: EXTRACT
 
-## 확장자 입력 불필요
-## 존재하는 파일명 or 새로 만들 파일명 입력 
-## '/' 안됨, '\'(역슬래시) 로 입력해야함
-Enter the Excel Path: D:\sample
+## 파일 다이얼로그로 엑셀 파일 생성 후 선택
 
 ## 전체 추출: *
 ## EX) Enter the Layer Name: *
