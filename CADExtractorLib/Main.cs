@@ -52,23 +52,42 @@ namespace CADExtractor
             string filteredLayerName = isAllSelected ? "*" : layerNameResult.StringResult.Replace(",", " ");
 
             List<string> layerList = new List<string>();
-            List<string> areaList = new List<string>();
+            List<double> areaList = new List<double>();
 
             using (Transaction trans = db.TransactionManager.StartTransaction())
             {
                 BlockTableRecord currentSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForRead) as BlockTableRecord;
 
+
                 foreach (ObjectId entId in currentSpace)
                 {
-                    if (entId.ObjectClass == RXClass.GetClass(typeof(Polyline)))
-                    {
-                        Polyline pline = trans.GetObject(entId, OpenMode.ForRead) as Polyline;
 
-                        if (pline.Closed && (filteredLayerName.Contains(pline.Layer) || isAllSelected))
+                    if (entId.ObjectClass == RXClass.GetClass(typeof(Hatch)))
+                    {
+                        Hatch hatch = trans.GetObject(entId, OpenMode.ForRead) as Hatch;
+                        try
                         {
-                            layerList.Add(pline.Layer);
-                            areaList.Add(Math.Round(pline.Area, MidpointRounding.AwayFromZero).ToString());
+                            /// 해칭 상태가 아닌데 해치로 잡혀서 면적 가져오다가 에러 잡히는 경우가 있다.
+
+                            if (string.IsNullOrEmpty(hatch.Area.ToString()))
+                            {
+                                continue;
+                            }
+
+                            if (filteredLayerName.Contains(hatch.Layer) || isAllSelected)
+                            {
+                                layerList.Add(hatch.Layer);
+                                areaList.Add(hatch.Area);
+                            }
+
                         }
+
+                        catch
+                        {
+                            continue;
+                        }
+                        
+                        
                     }
                 }
             }
