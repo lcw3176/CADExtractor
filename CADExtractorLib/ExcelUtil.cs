@@ -41,8 +41,9 @@ namespace CADExtractorLib
                 wb = app.Workbooks.Open(path);
                 ws = wb.Worksheets.get_Item("Sheet1") as Excel.Worksheet;
 
-                int index = 1;
+                int index = 1 + 1;
 
+                // 레이어 목록 삽입
                 foreach(string i in layerList)
                 {
                     if (!layerColumnDict.ContainsKey(i))
@@ -58,15 +59,30 @@ namespace CADExtractorLib
 
                 }
 
+                int rowMax = 0;
+
+                // 면적 삽입
                 for (int i = 0; i < layerList.Count; i++)
                 {
                     ws.Cells[++layerRowDict[layerList[i]], layerColumnDict[layerList[i]]] = areaList[i];
 
+                    if(layerRowDict[layerList[i]] > rowMax)
+                    {
+                        rowMax = layerRowDict[layerList[i]];
+                    }
+
                     areaValueDict[layerList[i]] += areaList[i];
                 }
 
+                // 엑셀 제일 왼쪽에 면적 인덱스 삽입
+                for(int i = 0; i < rowMax - 1; i++)
+                {
+                    ws.Cells[i + 2, 1] = i + 1;
+                }
+
+
                 int rowIndex = 1;
-                int columnIndex = layerColumnDict.Count;
+                int columnIndex = layerColumnDict.Count + 1;
 
                 foreach(string i in layerColumnDict.Keys)
                 {
