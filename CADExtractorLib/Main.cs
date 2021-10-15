@@ -101,7 +101,7 @@ namespace CADExtractor
                                     }
 
 
-                                    text.Position = new Point3d(xTemp / bulges.Count, yTemp / bulges.Count, 0);
+                                    text.Position = new Point3d(xTemp / bulges.Count, yTemp / bulges.Count, 1);
 
                                     writeSpace.AppendEntity(text);
                                     trans.AddNewlyCreatedDBObject(text, true);
