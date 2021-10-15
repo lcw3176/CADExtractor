@@ -1,5 +1,6 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using CADExtractorLib;
 using System;
@@ -58,6 +59,9 @@ namespace CADExtractor
             {
                 BlockTableRecord currentSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForRead) as BlockTableRecord;
 
+                BlockTable blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+                BlockTableRecord writeSpace = trans.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+                
 
                 foreach (ObjectId entId in currentSpace)
                 {
@@ -76,6 +80,33 @@ namespace CADExtractor
 
                             if (filteredLayerName.Contains(hatch.Layer) || isAllSelected)
                             {
+
+                                if (hatch.GetLoopAt(0).IsPolyline)
+                                {
+                                    DBText text = new DBText();
+                                    text.SetDatabaseDefaults();
+                                    text.TextString = Math.Round(hatch.Area).ToString();
+                                    text.Height = 10;
+
+                                    BulgeVertexCollection bulges = hatch.GetLoopAt(0).Polyline;
+                                    double xTemp = 0;
+                                    double yTemp = 0;
+
+                                    for (int j = 0; j < bulges.Count; j++)
+                                    {
+                                        BulgeVertex bulg = bulges[j];
+                                        Point2d pt = bulg.Vertex;
+                                        xTemp += pt.X;
+                                        yTemp += pt.Y;
+                                    }
+
+
+                                    text.Position = new Point3d(xTemp / bulges.Count, yTemp / bulges.Count, 0);
+
+                                    writeSpace.AppendEntity(text);
+                                    trans.AddNewlyCreatedDBObject(text, true);
+                                }
+
                                 layerList.Add(hatch.Layer);
                                 areaList.Add(hatch.Area);
                             }
@@ -90,7 +121,9 @@ namespace CADExtractor
                         
                     }
                 }
+                trans.Commit();
             }
+
 
             excelUtil.AddData(layerList, areaList);
 
