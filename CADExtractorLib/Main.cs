@@ -58,10 +58,9 @@ namespace CADExtractor
             using (Transaction trans = db.TransactionManager.StartTransaction())
             {
                 BlockTableRecord currentSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForRead) as BlockTableRecord;
-
-                BlockTable blockTable = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-                BlockTableRecord writeSpace = trans.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-                
+                BlockTableRecord writeSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                Dictionary<string, int> layerDict = new Dictionary<string, int>();
+                DrawOrderTable dot = trans.GetObject(writeSpace.DrawOrderTableId, OpenMode.ForWrite) as DrawOrderTable;
 
                 foreach (ObjectId entId in currentSpace)
                 {
@@ -85,7 +84,15 @@ namespace CADExtractor
                                 {
                                     DBText text = new DBText();
                                     text.SetDatabaseDefaults();
-                                    text.TextString = Math.Round(hatch.Area).ToString();
+
+                                    string dTextContent = hatch.Layer.Contains("-") ? hatch.Layer.Split('-')[1].Substring(0, 2): hatch.Layer.Substring(0, 2);
+
+                                    if (!layerDict.ContainsKey(hatch.Layer))
+                                    {
+                                        layerDict.Add(hatch.Layer, 1);
+                                    }
+
+                                    text.TextString = string.Format("{0}{1} {2}", dTextContent, layerDict[hatch.Layer]++, Math.Round(hatch.Area).ToString());
                                     text.Height = 10;
 
                                     BulgeVertexCollection bulges = hatch.GetLoopAt(0).Polyline;
@@ -101,9 +108,9 @@ namespace CADExtractor
                                     }
 
 
-                                    text.Position = new Point3d(xTemp / bulges.Count, yTemp / bulges.Count, 1);
-
+                                    text.Position = new Point3d(xTemp / bulges.Count, yTemp / bulges.Count, 0);
                                     writeSpace.AppendEntity(text);
+                                    dot.MoveToBottom(new ObjectIdCollection() { entId });
                                     trans.AddNewlyCreatedDBObject(text, true);
                                 }
 
@@ -121,6 +128,7 @@ namespace CADExtractor
                         
                     }
                 }
+
                 trans.Commit();
             }
 
