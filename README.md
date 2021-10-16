@@ -13,7 +13,7 @@
 - acmgd.dll, acdbmgd.dll 참조
 
 ## 사용법
-1. NETLOAD로 [CADExtractorLib.dll](https://github.com/lcw3176/CADExtractor/releases/download/v1.2.0/CADExtractorLib.dll) 임포트
+1. NETLOAD로 [CADExtractorLib.dll](https://github.com/lcw3176/CADExtractor/releases/download/v1.3.0/CADExtractorLib.dll) 임포트
 2. EXTRACT 명령어 입력
 3. 엑셀 파일 생성 후 선택
 4. 추출할 레이어 명 입력
