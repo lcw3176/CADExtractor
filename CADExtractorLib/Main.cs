@@ -136,6 +136,159 @@ namespace CADExtractor
             excelUtil.AddData(layerList, areaList);
 
         }
-    
+
+
+        /// <summary>
+        /// 면적 합친 후 계산하는 함수
+        /// </summary>
+        [CommandMethod("Merge")]
+        public void Merge()
+        {
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            Database db = Application.DocumentManager.MdiActiveDocument.Database;
+
+
+            PromptResult layerNameResult = ed.GetString("\nEnter Layer Number: ");
+
+            if (layerNameResult.Status != PromptStatus.OK)
+            {
+                return;
+            }
+
+
+            PromptResult layerNumberResult = ed.GetString("\nEnter Layer Number: ");
+
+            if (layerNumberResult.Status != PromptStatus.OK)
+            {
+                return;
+            }
+
+            string layerName = layerNameResult.StringResult;
+            List<int> layerNumberName = new List<int>();
+
+            foreach (string i in layerNumberResult.StringResult.ToString().Split(','))
+            {
+                ed.WriteMessage(i);
+                if (string.IsNullOrEmpty(i))
+                {
+                    continue;
+                }
+
+                if (i.Contains("~"))
+                {
+                    int startNumber = 0;
+                    int endNumber = 0;
+
+                    startNumber = int.Parse(i.Split('~')[0]);
+                    endNumber = int.Parse(i.Split('~')[1]);
+
+                    for(int j = startNumber; j <= endNumber; j++)
+                    {
+                        layerNumberName.Add(j);
+                    }
+                }
+
+                else
+                {
+                    layerNumberName.Add(int.Parse(i));
+                }
+            }
+            
+
+            using (Transaction trans = db.TransactionManager.StartTransaction())
+            {
+                BlockTableRecord currentSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForRead) as BlockTableRecord;
+                BlockTableRecord writeSpace = trans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                Dictionary<string, int> layerDict = new Dictionary<string, int>();
+                DrawOrderTable dot = trans.GetObject(writeSpace.DrawOrderTableId, OpenMode.ForWrite) as DrawOrderTable;
+
+                DBText text = new DBText();
+                text.SetDatabaseDefaults();
+
+
+                double hatchArea = 0;
+                double xTemp = 0;
+                double yTemp = 0;
+                int count = 0;
+
+                foreach (ObjectId entId in currentSpace)
+                {
+
+                    if (entId.ObjectClass == RXClass.GetClass(typeof(Hatch)))
+                    {
+                        Hatch hatch = trans.GetObject(entId, OpenMode.ForRead) as Hatch;
+                        try
+                        {
+                            /// 해칭 상태가 아닌데 해치로 잡혀서 면적 가져오다가 에러 잡히는 경우가 있다.
+
+                            if (string.IsNullOrEmpty(hatch.Area.ToString()))
+                            {
+                                continue;
+                            }
+
+                            bool result = false;
+
+                            foreach(int i in layerNumberName)
+                            {
+                                if (hatch.Layer.Contains(i.ToString()))
+                                {
+                                    result = true;
+                                }
+                            }
+
+
+                            if (layerName.Contains(hatch.Layer) && result)
+                            {
+
+
+                                if (hatch.GetLoopAt(0).IsPolyline)
+                                {
+                                 
+                                    BulgeVertexCollection bulges = hatch.GetLoopAt(0).Polyline;
+     
+
+                                    for (int j = 0; j < bulges.Count; j++)
+                                    {
+                                        BulgeVertex bulg = bulges[j];
+                                        Point2d pt = bulg.Vertex;
+                                        xTemp += pt.X;
+                                        yTemp += pt.Y;
+                                    }
+
+                                    count += bulges.Count;
+                                }
+                            }
+
+                            hatchArea += hatch.Area;
+
+                        }
+
+                        catch
+                        {
+                            continue;
+                        }
+
+
+                    }
+
+
+                  
+                }
+
+                text.TextString = string.Format("{0}-{1}", "병합", Math.Round(hatchArea).ToString());
+                text.Height = 70;
+
+
+                text.Position = new Point3d(0, 0, 0);
+                writeSpace.AppendEntity(text);
+                trans.AddNewlyCreatedDBObject(text, true);
+
+                trans.Commit();
+            }
+
+
+
+        }
+
     }
 }
